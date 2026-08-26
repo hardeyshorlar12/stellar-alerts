@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { prisma } from '../../lib/prisma';
 import { generateWebhookSignature } from '../../utils/webhook-signer';
+import { cryptoVault } from '../../utils/crypto-vault';
 
 export interface WebhookTestResult {
   success: boolean;
@@ -14,12 +15,13 @@ export class WebhooksService {
   async addWebhook(userId: string, url: string) {
     console.log(`[WebhooksService] Registering webhook ${url} for user ${userId}`);
     const secret = crypto.randomBytes(32).toString('hex');
+    const encryptedSecret = cryptoVault.encrypt(secret);
 
     return prisma.webhook.create({
       data: {
         userId,
         url,
-        secret,
+        secret: encryptedSecret,
       },
       select: {
         id: true,
@@ -62,6 +64,8 @@ export class WebhooksService {
       throw new Error('Webhook not found');
     }
 
+    const secret = cryptoVault.decrypt(webhook.secret);
+
     const payload = JSON.stringify({
       event: 'webhook.ping',
       timestamp: new Date().toISOString(),
@@ -71,14 +75,15 @@ export class WebhooksService {
       },
     });
 
-    const signature = generateWebhookSignature(payload, webhook.secret);
+    const signature = generateWebhookSignature(payload, secret);
 
     try {
       const response = await fetch(webhook.url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type: application/json',
           'X-Stellar-Signature': signature.headerValue,
+          'X-Stellar-Alerts-Nonce': signature.nonce,
         },
         body: payload,
         signal: AbortSignal.timeout(WEBHOOK_TEST_TIMEOUT_MS),
@@ -92,7 +97,7 @@ export class WebhooksService {
           : `Endpoint responded with status ${response.status}.`,
       };
     } catch (error: any) {
-      console.error(`[WebhooksService] Failed to deliver test ping to ${webhook.url}:`, error.message);
+      console.error(`[WebhooksService] Failed to deliver test ping to ${webhook.url}: ${error.message}`);
       return {
         success: false,
         status: null,
