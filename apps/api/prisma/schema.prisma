@@ -14,7 +14,7 @@ model User {
   wallets     Wallet[]
   webhooks    Webhook[]
   notifyPrefs NotificationPreference?
-  sorobanSubscriptions SorobanSubscription[]
+  sorobanSubscriptions SorobanContractSubscription[]
 }
 
 model Wallet {
@@ -94,7 +94,7 @@ model WebhookLog {
 }
 
 model WebhookCircuitBreaker {
-  id             String   @id @default(cuid())
+  id               String   @id @default(cuid())
   webhookId        String   @unique
   webhook          Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
   state            String   @default("closed") // closed, open, half-open
@@ -129,8 +129,8 @@ model SorobanContractSubscription {
   contractId     String
   topic          String?
   isActive       Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([userId, contractId, topic])
   @@index([contractId])
