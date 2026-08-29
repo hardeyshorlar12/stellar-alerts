@@ -3,13 +3,16 @@ node_modules
 dist
 build
 .next
+coverage
+apps/**/coverage
 
 dev.db
 *.db
 scripts/
+!scripts/dr-failover.ts
+!scripts/generate-types.ts
 
 apps/**/.env.local
 
 target/
 Cargo.lock
-

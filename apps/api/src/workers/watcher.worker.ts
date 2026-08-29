@@ -2,52 +2,19 @@ import * as StellarSdk from 'stellar-sdk';
 import { prisma, connectWithRetry } from '../lib/prisma';
 import { stellar, decodeHorizonAsset, parseSacTransferEvent } from '../lib/stellar';
 import { enqueuePaymentAlert } from '../lib/queue';
-import { getSorobanLatestLedger } from '../lib/soroban';
+import {
+  getSorobanLatestLedger,
+  loadContractRegistry,
+  getActiveContractIds,
+  parseSorobanTransferEvent,
+  routeEventToUsers,
+} from '../lib/soroban';
+import { registerSupervisorHeartbeat } from './supervisor';
 import { withWalletLock } from '../lib/lock';
 import { shouldAlert, PaymentContext } from '../lib/rules-engine';
+import { MemoryMonitor, MemorySnapshot } from '../utils/memory-monitor';
 
-// Contract Registry in-memory cache for multi-contract Soroban subscriptions
-let contractRegistry: Map<string, string[]> = new Map();
 
-export async function loadContractRegistry() {
-  try {
-    const subs = await prisma.sorobanContractSubscription.findMany({
-      where: { isActive: true },
-    });
-    const newRegistry = new Map<string, string[]>();
-    for (const sub of subs) {
-      const existing = newRegistry.get(sub.contractId) || [];
-      existing.push(sub.userId);
-      newRegistry.set(sub.contractId, existing);
-    }
-    contractRegistry = newRegistry;
-    console.log(`[SorobanRegistry] Loaded ${contractRegistry.size} active contract subscription(s)`);
-  } catch (err: any) {
-    console.warn(`[SorobanRegistry] Failed to load contract registry: ${err.message}`);
-  }
-}
-
-export function getActiveContractIds(): string[] {
-  return Array.from(contractRegistry.keys());
-}
-
-export function routeEventToUsers(event: any): { topic: string; userIds: string[] }[] {
-  const contractId = event.contractId || event.id || '';
-  const userIds = contractRegistry.get(contractId) || [];
-  return [{ topic: event.topic || 'transfer', userIds }];
-}
-
-export function registerSupervisorHeartbeat() {
-  if (process.send) {
-    setInterval(() => {
-      try {
-        process.send!({ type: 'heartbeat', timestamp: Date.now() });
-      } catch (err) {
-        // ignore broken pipe
-      }
-    }, 10000);
-  }
-}
 
 export async function processPaymentRecord(
   wallet: { id: string; publicKey: string; userId?: string },
@@ -116,7 +83,7 @@ export async function processPaymentRecord(
         where: { userId: wallet.userId },
       });
 
-      if (notifyPrefs?.filterRules) {
+      if ((notifyPrefs as any)?.filterRules) {
         const paymentContext: PaymentContext = {
           amount: Number(amount),
           asset,
@@ -124,7 +91,7 @@ export async function processPaymentRecord(
           memo,
         };
         
-        shouldSendAlert = shouldAlert(notifyPrefs.filterRules as any, paymentContext);
+        shouldSendAlert = shouldAlert((notifyPrefs as any)?.filterRules, paymentContext);
         
         if (!shouldSendAlert) {
           console.log(
@@ -279,8 +246,44 @@ export async function startHorizonSSEStream(wallet: { id: string; publicKey: str
   }
 }
 
+let memoryMonitor: MemoryMonitor | null = null;
+
+/**
+ * Logs the reason, stops the memory monitor's own timer, and exits the
+ * process so the supervisor (workers/supervisor.ts) respawns it fresh with
+ * a clean heap — a controlled exit chosen before the OS OOM-kills the
+ * process mid-request, not an uncontrolled crash.
+ */
+export function gracefulRestart(reason: string, snapshot: MemorySnapshot): void {
+  console.error(
+    `[WatcherWorker] 💥 Initiating graceful restart: ${reason} ` +
+      `(heap ${(snapshot.usageRatio * 100).toFixed(1)}%, ${Math.round(snapshot.heapUsed / 1024 / 1024)}MB used)`,
+  );
+  memoryMonitor?.stop();
+  // setImmediate gives the error log above a turn of the event loop to
+  // flush to stdout/stderr before the process exits.
+  setImmediate(() => process.exit(1));
+}
+
+export function startMemoryMonitor(): MemoryMonitor {
+  const monitor = new MemoryMonitor({
+    onCleanup: (snapshot, gcRan) => {
+      console.warn(
+        `[WatcherWorker] Heap cleanup pass ${gcRan ? "ran" : "skipped (start with --expose-gc to enable it)"} ` +
+          `at ${(snapshot.usageRatio * 100).toFixed(1)}% usage.`,
+      );
+    },
+    onRestartRequired: (snapshot) => gracefulRestart("sustained high heap usage", snapshot),
+  });
+  monitor.start();
+  memoryMonitor = monitor;
+  return monitor;
+}
+
 export async function runWatcher() {
   console.log("[WatcherWorker] 🚀 Starting Stellar Testnet Watcher Worker...");
+
+  startMemoryMonitor();
 
   // Load Soroban contract subscriptions
   await loadContractRegistry();
