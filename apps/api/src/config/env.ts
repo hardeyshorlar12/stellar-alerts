@@ -18,6 +18,12 @@ const parseEnv = () => {
     TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || (process.env.NODE_ENV === 'test' || process.env.VITEST ? "dummy-telegram-bot-token" : undefined),
     JWT_SECRET: process.env.JWT_SECRET || (process.env.NODE_ENV === 'test' || process.env.VITEST ? "dummy-jwt-secret-key-12345" : undefined),
     REDIS_URL: process.env.REDIS_URL || (process.env.NODE_ENV === 'test' || process.env.VITEST ? "redis://localhost:6379" : undefined),
+    SOROBAN_RENT_WORKER_ENABLED: process.env.SOROBAN_RENT_WORKER_ENABLED || "true",
+    SOROBAN_RENT_WORKER_INTERVAL_MS: process.env.SOROBAN_RENT_WORKER_INTERVAL_MS || "60000",
+    SOROBAN_RENT_WORKER_SECRET: process.env.SOROBAN_RENT_WORKER_SECRET,
+    SOROBAN_RENT_RENEWAL_THRESHOLD: process.env.SOROBAN_RENT_RENEWAL_THRESHOLD || "5000",
+    SOROBAN_RENT_TARGET_TTL: process.env.SOROBAN_RENT_TARGET_TTL || "10000",
+    SOROBAN_RENT_MAX_CONCURRENCY: process.env.SOROBAN_RENT_MAX_CONCURRENCY || "5",
   };
 
   const parsed = envSchema.safeParse(envInput);
@@ -33,6 +39,12 @@ const parseEnv = () => {
     JWT_SECRET: "dummy-jwt-secret-key-12345",
     REDIS_URL: "redis://localhost:6379",
     PORT: "3001",
+    SOROBAN_RENT_WORKER_ENABLED: "true",
+    SOROBAN_RENT_WORKER_INTERVAL_MS: "60000",
+    SOROBAN_RENT_WORKER_SECRET: undefined,
+    SOROBAN_RENT_RENEWAL_THRESHOLD: "5000",
+    SOROBAN_RENT_TARGET_TTL: "10000",
+    SOROBAN_RENT_MAX_CONCURRENCY: "5",
   };
 };
 
