@@ -21,7 +21,7 @@ describe('parseSorobanMintBurnEvent', () => {
       contractId: 'C...',
       topic: ['burn'],
       value: { from: 'G...', amount: '50000' },
-      ledgerSeq: 12346,
+      ledger: 12346,
     };
     const parsed = parseSorobanMintBurnEvent(event);
     expect(parsed?.eventType).toBe('BURN');
@@ -35,7 +35,7 @@ describe('parseSorobanMintBurnEvent', () => {
       topic: ['transfer'],
       value: { from: 'G...', to: 'G...', amount: '100' },
     };
-    expect(parseSorobanMintBurnEvent(event)).toBeNull();
+    expect(parseSorobanMintBurnEvent(event)).toBENull();
   });
 
   it('should handle missing amount', () => {
