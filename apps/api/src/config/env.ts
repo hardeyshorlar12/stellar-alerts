@@ -22,9 +22,11 @@ const envSchema = z.object({
   SOROBAN_RENT_RENEWAL_THRESHOLD: z.string().optional().default("5000"),
   SOROBAN_RENT_TARGET_TTL: z.string().optional().default("10000"),
   SOROBAN_RENT_MAX_CONCURRENCY: z.string().optional().default("5"),
+  SOROBAN_STAKING_REWARD_WORKER_ENABLED: z.string().optional().default("true"),
 });
+export type Env = z.infer<typeof envSchema>;
 
-const parseEnv = () => {
+const parseEnv = (): Env => {
   const envInput = {
     ...process.env,
     DATABASE_URL: process.env.DATABASE_URL || (process.env.NODE_ENV === 'test' || process.env.VITEST ? "postgresql://postgres:postgres@localhost:5432/stellar_alerts" : undefined),
@@ -40,8 +42,8 @@ const parseEnv = () => {
     SOROBAN_RENT_RENEWAL_THRESHOLD: process.env.SOROBAN_RENT_RENEWAL_THRESHOLD || "5000",
     SOROBAN_RENT_TARGET_TTL: process.env.SOROBAN_RENT_TARGET_TTL || "10000",
     SOROBAN_RENT_MAX_CONCURRENCY: process.env.SOROBAN_RENT_MAX_CONCURRENCY || "5",
+    SOROBAN_STAKING_REWARD_WORKER_ENABLED: process.env.SOROBAN_STAKING_REWARD_WORKER_ENABLED || "true",
   };
-
   const parsed = envSchema.safeParse(envInput);
 
   if (!parsed.success) {
@@ -65,6 +67,7 @@ const parseEnv = () => {
     SOROBAN_RENT_RENEWAL_THRESHOLD: "5000",
     SOROBAN_RENT_TARGET_TTL: "10000",
     SOROBAN_RENT_MAX_CONCURRENCY: "5",
+    SOROBAN_STAKING_REWARD_WORKER_ENABLED: "true",
   };
 };
 

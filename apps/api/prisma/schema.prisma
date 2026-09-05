@@ -71,18 +71,19 @@ model NotificationPreference {
 }
 
 model Webhook {
-  id        String                   @id @default(cuid())
-  userId    String
-  user      User                     @relation(fields: [userId], references: [id])
-  url       String
-  secretCiphertext String
-  secretIv         String
-  secretAuthTag    String
-  keyVersion       Int      @default(1)
-  isActive  Boolean                  @default(true)
-  createdAt DateTime                 @default(now())
-  logs      WebhookLog[]
-  circuitBreaker WebhookCircuitBreaker?
+  id                String                   @id @default(cuid())
+  userId            String
+  user              User                     @relation(fields: [userId], references: [id])
+  url               String
+  secretCiphertext  String
+  secretIv          String
+  secretAuthTag     String
+  keyVersion        Int                      @default(1)
+  payloadTemplate   String?
+  isActive          Boolean                  @default(true)
+  createdAt         DateTime                 @default(now())
+  logs              WebhookLog[]
+  circuitBreaker    WebhookCircuitBreaker?
 }
 
 model WebhookLog {
@@ -257,4 +258,21 @@ model DexSwapEvent {
   @@unique([poolContractId, ledgerSeq, tokenInAddress, tokenOutAddress, amountIn, amountOut])
   @@index([poolContractId])
   @@index([ledgerSeq])
+}
+
+// Audit record of security events and contract event replay attempts
+model SecurityAuditLog {
+  id          String   @id @default(cuid())
+  eventType   String   @default("EVENT_REPLAY_ATTEMPT")
+  txHash      String?
+  topic       String?
+  sequence    String?
+  contractId  String?
+  details     Json?
+  severity    String   @default("HIGH")
+  createdAt   DateTime @default(now())
+
+  @@index([eventType])
+  @@index([txHash])
+  @@index([createdAt])
 }

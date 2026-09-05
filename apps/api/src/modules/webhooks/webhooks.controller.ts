@@ -11,7 +11,7 @@ export class WebhooksController {
     }
 
     const userId = (request as any).user.id;
-    const webhook = await webhooksService.addWebhook(userId, parsed.data.url);
+    const webhook = await webhooksService.addWebhook(userId, parsed.data.url, parsed.data.payloadTemplate);
     if (webhook && webhook.secret) {
       webhook.secret = decryptSecret(webhook.secret);
     }
