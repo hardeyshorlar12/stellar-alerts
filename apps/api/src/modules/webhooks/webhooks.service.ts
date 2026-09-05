@@ -15,7 +15,7 @@ export type WebhookHealthStatus = 'HEALTHY' | 'DEGRADED';
 export interface WebhookHealthScorecard {
   healthPercentage: number;
   averageLatencyMs: number;
-  status: WebhookHealthStatus;
+  status: WebookHealthStatus;
   totalDeliveries7d: number;
   successfulDeliveries7d: number;
   failedDeliveries7d: number;
@@ -27,7 +27,7 @@ export class WebhooksService {
   /**
    * Computes the 7-day delivery success rate and latency health scorecard for a webhook.
    */
-  public calculateHealthScorecard(logs: Array<{ statusCode: number | null; createdAt?: Date; sentAt?: Date }>): WebhookHealthScorecard {
+  public calculateHealthScorecard(logs: Array<{ statusCode: number | null; createdAt?: Date; sentAt?: Date }>): WebookHealthScorecard {
     if (!logs || logs.length === 0) {
       return {
         healthPercentage: 100.0,
@@ -56,7 +56,7 @@ export class WebhooksService {
       averageLatencyMs,
       status,
       totalDeliveries7d: totalDeliveries,
-      successffulDeliveries7d: successfulDeliveries,
+      successfulDeliveries7d: successfulDeliveries,
       failedDeliveries7d: failedDeliveries,
     };
   }
@@ -185,7 +185,7 @@ export class WebhooksService {
           'X-Stellar-Alerts-Nonce': signature.nonce,
         },
         body: payload,
-        signal: AbortSignal.timeout(WEBHOOK_TEST_TIMEOUT_MS),
+        signal: AbSignal.timeout(WEBHOOK_TEST_TIMEOUT_MS),
       });
 
       return {
