@@ -413,6 +413,7 @@ export interface ParsedSorobanMintBurn {
   contractId: string;
   eventType: 'MINT' | 'BURN';
   amount: string;
+  rawAmount?: bigint;
   from: string;
   to: string;
   ledgerSeq?: number;
@@ -420,21 +421,26 @@ export interface ParsedSorobanMintBurn {
 
 export function parseSorobanMintBurnEvent(event: any): ParsedSorobanMintBurn | null {
   if (!event?.topic?.length) return null;
-  const topic = String(event.topic[0]).toLowerCase();
+  const topic = extractSwapTopicValue(event.topic[0]);
   if (topic !== 'mint' && topic !== 'burn') return null;
 
-  const value = event.value || {};
-  const amount = value.amount ?? value.mint?.amount ?? value.burn?.amount ?? '0';
-  const from = value.from ?? value.burn?.from ?? '';
-  const to = value.to ?? value.mint?.to ?? '';
+  const value = event.value || event.data || {};
   const contractId = event.contractId || '';
+  const rawAmount = decodeScAmount(value.amount ?? value.mint?.amount ?? value.burn?.amount);
+  if (rawAmount === null) return null;
+
+  const topicFrom = topic === 'burn' ? asAddressString(event.topic[1]) : '';
+  const topicTo = topic === 'mint' ? asAddressString(event.topic[event.topic.length - 1]) : '';
+  const from = asAddressString(value.from ?? value.burn?.from) || topicFrom;
+  const to = asAddressString(value.to ?? value.mint?.to) || topicTo;
 
   return {
     contractId,
     eventType: topic === 'mint' ? 'MINT' : 'BURN',
-    amount: String(amount),
-    from: from || '',
-    to: to || '',
+    amount: String(rawAmount),
+    rawAmount,
+    from,
+    to,
     ledgerSeq: event.ledgerSeq ?? event.ledger,
   };
 }
@@ -990,3 +996,47 @@ export class StakingRewardTracker {
 }
 
 export const stakingRewardTracker = new StakingRewardTracker();
+
+export class SacMintBurnAnalyticsAggregator {
+  private mintTotals = new Map<string, bigint>();
+  private burnTotals = new Map<string, bigint>();
+
+  processParsedEvent(event: ParsedSorobanMintBurn): void {
+    const contractId = event.contractId || "unknown";
+    const amount = event.rawAmount ?? 0n;
+    if (event.eventType === "MINT") {
+      this.mintTotals.set(contractId, (this.mintTotals.get(contractId) || 0n) + amount);
+    } else {
+      this.burnTotals.set(contractId, (this.burnTotals.get(contractId) || 0n) + amount);
+    }
+  }
+
+  processEventBatch(events: any[]): void {
+    for (const rawEvent of events) {
+      const parsed = parseSorobanMintBurnEvent(rawEvent);
+      if (parsed) this.processParsedEvent(parsed);
+    }
+  }
+
+  getCumulativeMintedAmount(contractId: string): string {
+    return formatTokenAmount(this.mintTotals.get(contractId) || 0n);
+  }
+
+  getCumulativeBurnedAmount(contractId: string): string {
+    return formatTokenAmount(this.burnTotals.get(contractId) || 0n);
+  }
+
+  getNetSupply(contractId: string): string {
+    return formatTokenAmount(
+      (this.mintTotals.get(contractId) || 0n) -
+        (this.burnTotals.get(contractId) || 0n),
+    );
+  }
+
+  reset(): void {
+    this.mintTotals.clear();
+    this.burnTotals.clear();
+  }
+}
+
+export const sacMintBurnAnalyticsAggregator = new SacMintBurnAnalyticsAggregator();
