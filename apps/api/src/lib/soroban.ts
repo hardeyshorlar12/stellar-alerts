@@ -10,7 +10,6 @@ import { decodeScAddress, decodeScAmount, formatTokenAmount } from "./stellar";
 const SOROBAN_RPC_URL =
   process.env.SOROBAN_RPC_URL || "https://soroban-testnet.stellar.org";
 const LEDGER_BATCH_SIZE = 100;
-const MAX_EVENTS_PER_QUERY = 10000;
 const MAX_ACTIVE_CONTRACTS = 100;
 
 export const sorobanServer = new (StellarSdk as any).rpc.Server(
