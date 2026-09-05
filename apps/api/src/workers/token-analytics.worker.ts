@@ -96,7 +96,7 @@ async function processContract(contractId: string): Promise<void> {
       if (parsed && parsed.ledgerSeq) {
         await processMintBurn(parsed);
       }
-      const eventLedger = event.ledger || event.ledgerSeq || 0;
+      const eventLedger = event.ledger || parsed?.ledgerSeq || 0;
       if (eventLedger > lastProcessedLedger) {
         lastProcessedLedger = eventLedger;
       }
