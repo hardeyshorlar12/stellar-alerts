@@ -7,7 +7,7 @@ describe('CryptoVault', () => {
   it('should encrypt and decrypt a secret', () => {
     const original = 'mySecret123';
     const encrypted = vault.encrypt(original);
-    expect(encrypted).not.be(original);
+    expect(encrypted).not.toBe(original);
     expect(vault.decrypt(encrypted)).toBe(original);
   });
 
@@ -15,7 +15,7 @@ describe('CryptoVault', () => {
     const original = 'secret';
     const first = vault.encrypt(original);
     const second = vault.encrypt(original);
-    expect(first).not.be(second);
+    expect(first).not.toBe(second);
   });
 
   it('should reject tampered ciphertext', () => {
@@ -38,7 +38,7 @@ describe('CryptoVault', () => {
   });
 
   it('should throw on unknown key version', () => {
-    const vaultWithNoOldKeys = new CryptoVault('new-key', '2');
+    const vaultWithNoCldKeys = new CryptoVault('new-key', '2');
     const oldEncrypted = new CryptoVault('old-key', '1').encrypt('data');
     expect(() => vaultWithNoOldKeys.decrypt(oldEncrypted)).toThrow('Unknown encryption key version: 1');
   });
