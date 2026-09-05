@@ -142,6 +142,7 @@ model SorobanContractSubscription {
 model SacTokenMintBurnEvent {
   id         String   @id @default(cuid())
   contractId   String
+  supply       SacTokenSupply @relation(fields: [contractId], references: [contractId], onDelete: Cascade)
   eventType   String   @default("mint")
   amount       Decimal
   from         String?
@@ -157,6 +158,7 @@ model SacTokenMintBurnEvent {
 
 model SacTokenSupply {
   contractId        String   @id
+  mintBurnEvents    SacTokenMintBurnEvent[]
   circulatingSupply Decimal  @default("0")
   totalMinted       Decimal  @default("0")
   totalBurned        Decimal  @default("0")
