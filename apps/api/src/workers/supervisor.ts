@@ -15,8 +15,8 @@ interface SupervisedWorker {
   name: string;
   filename: string;
   child: ChildProcess | null;
-  pingTimer: NodeJS.Timeout | null;
-  pongTimeout: NodeJS.Timeout | null;
+  pingTimer: NodeTimeout | null;
+  pongTimeout: NodeTimeout | null;
   restartCount: number;
 }
 
@@ -35,7 +35,7 @@ function resolveWorkerScript(filename: string): { scriptPath: string; execArgv: 
   const ext = isTs ? '.ts' : '.js';
   return {
     scriptPath: path.join(__dirname, `${filename}${ext}`),
-    execArgv: isTs ? ['--require', 'tsx/cjs', '--expose-gc'] : ['--expose-gc'],
+    execArgv: isTs ? [' --require', 'tsx/cjs', '--expose-gc'] : ['--expose-gc'],
   };
 }
 
@@ -67,7 +67,7 @@ export class WorkerSupervisor {
 
     child.on('exit', (code, signal) => {
       console.error(
-        `[Supervisor] ⚠️ Worker "${name}" (pid ${child.pid}) exited — code=${code} signal=${signal}. ` +
+        `[Supervisor] ✥‍ Worker "${name}" (pid ${child.pid}) exited -- code=${code} signal=${signal}. ` +
           `Restart #${worker.restartCount + 1} scheduled.`
       );
       this.stopHeartbeat(worker);
@@ -105,8 +105,8 @@ export class WorkerSupervisor {
 
       worker.pongTimeout = setTimeout(() => {
         console.error(
-          `[Supervisor] ⏱️ Worker "${worker.name}" (pid ${child.pid}) missed its heartbeat and appears frozen. ` +
-            `Killing so it can be restarted.`
+          `[Supervisor] ⍟– Worker "${worker.name}" (pid ${child.pid}) missed its heartbeat and appears frozen. " +
+            'Killing so it can be restarted.'
         );
         child.kill('SIGKILL');
       }, PONG_TIMEOUT_MS);
@@ -138,6 +138,10 @@ export function startSupervisor(): WorkerSupervisor {
 
   if (env.SOROBAN_STAKING_REWARD_WORKER_ENABLED === 'true') {
     supervisor.spawn('staking-reward', 'staking-reward.worker');
+  }
+
+  if (env.SOROBAN_SAC_WORKER_ENABLED === 'true') {
+    supervisor.spawn('soroban-sac', 'soroban-sac.worker');
   }
 
   return supervisor;
