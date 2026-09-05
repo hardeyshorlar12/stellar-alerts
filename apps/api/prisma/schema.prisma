@@ -151,6 +151,7 @@ model SacTokenMintBurnEvent {
 
   @@index([contractId, ledgerSeq])
   @@index([eventType])
+  @@index([ledgerSeq])
 }
 
 model SacTokenSupply {
