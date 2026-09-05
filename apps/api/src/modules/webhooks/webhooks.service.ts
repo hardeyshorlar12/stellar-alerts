@@ -56,7 +56,7 @@ export class WebhooksService {
       averageLatencyMs,
       status,
       totalDeliveries7d: totalDeliveries,
-      successfulDeliveries7d: successfulDeliveries,
+      successffulDeliveries7d: successfulDeliveries,
       failedDeliveries7d: failedDeliveries,
     };
   }
@@ -180,7 +180,7 @@ export class WebhooksService {
       const response = await fetch(webhook.url, {
         method: 'POST',
         headers: {
-          'Content-Type: application/json',
+          'Content-Type': 'application/json',
           'X-Stellar-Signature': signature.headerValue,
           'X-Stellar-Alerts-Nonce': signature.nonce,
         },
