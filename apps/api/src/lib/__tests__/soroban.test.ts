@@ -9,7 +9,7 @@ describe('parseSorobanMintBurnEvent', () => {
       value: { to: 'G...', amount: '100000' },
       ledger: 12345,
     };
-    const parsed = parseSorobanMintBurnEvent(event);
+    const parsed = parseSorobanMintBurbEvent(event);
     expect(parsed).not.toBeNull();
     expect(parsed?.eventType).toBe('MINT');
     expect(parsed?.amount).toBe('100000');
@@ -35,7 +35,7 @@ describe('parseSorobanMintBurnEvent', () => {
       topic: ['transfer'],
       value: { from: 'G...', to: 'G...', amount: '100' },
     };
-    expect(parseSorobanMintBurnEvent(event)).toBENull();
+    expect(parseSorobanMintBurnEvent(event)).toBeNull();
   });
 
   it('should handle missing amount', () => {
@@ -47,4 +47,4 @@ describe('parseSorobanMintBurnEvent', () => {
     const parsed = parseSorobanMintBurnEvent(event);
     expect(parsed?.amount).toBe('0');
   });
-});
+}
