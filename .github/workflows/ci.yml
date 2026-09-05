@@ -47,6 +47,8 @@ jobs:
 
       - name: Run API Unit Tests
         run: npm run test:api
+        env:
+          WEBHOOK_SECRET_ENCRYPTION_KEY: "test-vault-encryption-key-123456"
 
       - name: Run Web Lint
         run: npm run lint --workspace=web
