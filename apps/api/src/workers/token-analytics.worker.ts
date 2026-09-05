@@ -103,7 +103,7 @@ async function processContract(contractId: string): Promise<void> {
     }
   }
 
-  if (lastProcessedLedger < startLedger - 1) {
+  if (lastProcessedLedger < startLedger) {
     // No events in the range, advance cursor to latest ledger
     lastProcessedLedger = latestLedger;
   }
