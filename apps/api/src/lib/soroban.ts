@@ -437,7 +437,7 @@ export function parseSorobanMintBurnEvent(event: any): ParsedSorobanMintBurn | n
   return {
     contractId,
     eventType: topic === 'mint' ? 'MINT' : 'BURN',
-    amount: String(rawAmount),
+    amount: formatTokenAmount(rawAmount),
     rawAmount,
     from,
     to,
