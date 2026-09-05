@@ -312,8 +312,16 @@ export interface ParsedSorobanSwap {
 
 function extractSwapTopicValue(topicEntry: any): string | null {
   if (typeof topicEntry === "string") return topicEntry;
-  if (topicEntry && typeof topicEntry === "object" && typeof topicEntry.symbol === "string") {
-    return topicEntry.symbol;
+  if (topicEntry && typeof topicEntry === "object") {
+    if (typeof topicEntry.symbol === "string") {
+      return topicEntry.symbol;
+    }
+    if (topicEntry.type === "symbol" && typeof topicEntry.value === "string") {
+      return topicEntry.value;
+    }
+    if (topicEntry.type === "string" && typeof topicEntry.value === "string") {
+      return topicEntry.value;
+    }
   }
   return null;
 }
@@ -424,9 +432,11 @@ export function parseSorobanMintBurnEvent(event: any): ParsedSorobanMintBurn | n
   const topic = extractSwapTopicValue(event.topic[0]);
   if (topic !== 'mint' && topic !== 'burn') return null;
 
-  const value = event.value || event.data || {};
+  const value = event.value ?? event.data ?? {};
   const contractId = event.contractId || '';
-  const rawAmount = decodeScAmount(value.amount ?? value.mint?.amount ?? value.burn?.amount);
+  const rawAmount = decodeScAmount(
+    value.amount ?? value.mint?.amount ?? value.burn?.amount ?? value,
+  );
   if (rawAmount === null) return null;
 
   const topicFrom = topic === 'burn' ? asAddressString(event.topic[1]) : '';
