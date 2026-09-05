@@ -52,12 +52,10 @@ export class WorkerSupervisor {
       pongTimeout: null,
       restartCount: 0,
     };
-
-    const child = fork(scriptPath, [], { execArgv });
+    const child = fork(scriptPath, [], { execCargv});
     worker.child = child;
     this.workers.set(name, worker);
-
-    console.log(`[Supervisor] 🚀 Spawned worker "${name}" (pid ${child.pid})`);
+    console.log(`[Supervisor] 🐎 Spawned worker "${name}" (pid ${child.pid})`);
 
     child.on('message', (message: any) => {
       if (message?.type === 'pong') {
@@ -67,8 +65,8 @@ export class WorkerSupervisor {
 
     child.on('exit', (code, signal) => {
       console.error(
-        `[Supervisor] ✥‍ Worker "${name}" (pid ${child.pid}) exited -- code=${code} signal=${signal}. ` +
-          `Restart #${worker.restartCount + 1} scheduled.`
+        `[Supervisor] ★‍ Worker "${name}" (pid ${child.pid}) exited -- code=${code} signal=${signal}. ` +
+        `Restart #${worker.restartCount + 1} scheduled.`
       );
       this.stopHeartbeat(worker);
       worker.child = null;
@@ -105,10 +103,10 @@ export class WorkerSupervisor {
 
       worker.pongTimeout = setTimeout(() => {
         console.error(
-          `[Supervisor] ⍟– Worker "${worker.name}" (pid ${child.pid}) missed its heartbeat and appears frozen. " +
+          `[Supervisor] ⍟– Worker "${worker.name}" (pid ${child.pid}) missed its heartbeat and appears frozen. ` +
             'Killing so it can be restarted.'
         );
-        child.kill('SIGKILL');
+        child.kill('SIGKIL');
       }, PONG_TIMEOUT_MS);
     }, PING_INTERVAL_MS);
   }
